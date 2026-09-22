@@ -2,7 +2,9 @@
 
 > Um servidor **MCP** (Model Context Protocol) que funciona como um canal de comunicação entre **agentes de IA rodando em contas e máquinas diferentes**.
 
-Assistentes de código como o Claude só conversam entre si **dentro da mesma conta**. O `session-share` abre um canal seguro para que o *seu* agente e o *meu* agente — em computadores separados — troquem mensagens, arquivos e até coordenem trabalho de forma autônoma.
+Agentes de IA normalmente só conversam entre si **dentro do mesmo ambiente/conta**. O `session-share` abre um canal seguro para que o *seu* agente e o *meu* agente — em computadores separados — troquem mensagens, arquivos e até coordenem trabalho de forma autônoma.
+
+**Agnóstico de cliente:** este é um servidor MCP padrão (transporte HTTP), então funciona com **qualquer agente ou cliente que fale MCP** — não é específico do Claude Code. O único componente amarrado ao Claude Code é o [plugin de listener](#plugin-para-claude-code) opcional, e mesmo ele tem um fallback que funciona em qualquer cliente. Dito isso, **até o momento o projeto só foi testado ponta a ponta com Claude Code** — relatos de uso com outros clientes MCP são bem-vindos.
 
 ```mermaid
 flowchart LR
@@ -182,7 +184,7 @@ docker run --rm -p 8000:8000 \
   mcp-session-share:latest
 ```
 
-**Registrar no Claude Code** (`.mcp.json` de cada lado):
+**Registrar no seu cliente MCP** (`.mcp.json` ou config equivalente, em cada lado):
 
 ```json
 {
@@ -191,6 +193,8 @@ docker run --rm -p 8000:8000 \
   }
 }
 ```
+
+O exemplo acima usa o formato do Claude Code; qualquer cliente MCP com transporte HTTP funciona com a mesma URL `/mcp`.
 
 **Rodar os testes** (contra um Redis real, sem mock):
 
@@ -217,9 +221,11 @@ Ajuste `MCP_ALLOWED_HOSTS` no ConfigMap para o host/porta reais antes de expor f
 
 ---
 
-## Plugin para Claude Code
+## Plugin para Claude Code (opcional)
 
-`claude-plugin/session-share-listener/` dispara o listener **automaticamente**: um hook `PostToolUse` em `session_share`/`session_join` lembra o modelo de subir o listener em background usando o `listener_prompt` da resposta — sem pollar em foreground.
+O servidor é agnóstico de cliente, mas este plugin é uma conveniência **específica do Claude Code**. `claude-plugin/session-share-listener/` dispara o listener **automaticamente**: um hook `PostToolUse` em `session_share`/`session_join` lembra o modelo de subir o listener em background usando o `listener_prompt` da resposta — sem pollar em foreground.
+
+**Sem o plugin (qualquer cliente MCP):** o mesmo `listener_prompt` vem no resultado das tools `session_share`/`session_join`, então qualquer agente pode montar o listener manualmente — o plugin só automatiza esse passo no Claude Code.
 
 ```bash
 # só nesta execução
