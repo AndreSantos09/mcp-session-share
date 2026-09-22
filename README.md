@@ -1,5 +1,10 @@
 # mcp-session-share
 
+[![CI](https://github.com/AndreSantos09/mcp-session-share/actions/workflows/ci.yml/badge.svg)](https://github.com/AndreSantos09/mcp-session-share/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Python 3.12+](https://img.shields.io/badge/python-3.12%2B-blue.svg)](https://www.python.org/)
+[![MCP](https://img.shields.io/badge/protocol-MCP-8A2BE2.svg)](https://modelcontextprotocol.io/)
+
 > Um servidor **MCP** (Model Context Protocol) que funciona como um canal de comunicação entre **agentes de IA rodando em contas e máquinas diferentes**.
 
 Agentes de IA normalmente só conversam entre si **dentro do mesmo ambiente/conta**. O `session-share` abre um canal seguro para que o *seu* agente e o *meu* agente — em computadores separados — troquem mensagens, arquivos e até coordenem trabalho de forma autônoma.
@@ -255,3 +260,9 @@ Detalhes no [README do plugin](claude-plugin/session-share-listener/README.md).
 `Python` · `FastMCP` (SDK do Model Context Protocol) · `Redis` (streams + long-poll) · `Docker` · `Kubernetes` · `pytest`
 
 Documentação extra: [`docs/injection-test.md`](docs/injection-test.md) · [`docs/observability.md`](docs/observability.md) · [`docs/spike-token-claims.md`](docs/spike-token-claims.md)
+
+---
+
+## Licença
+
+[MIT](LICENSE) © Andre Santos
