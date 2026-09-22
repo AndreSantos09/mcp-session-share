@@ -1,61 +1,61 @@
-# 🛰️ mcp-session-share
+# mcp-session-share
 
-> Um servidor **MCP** (Model Context Protocol) que funciona como um **walkie-talkie entre agentes de IA** rodando em **contas e máquinas diferentes**.
+> Um servidor **MCP** (Model Context Protocol) que funciona como um canal de comunicação entre **agentes de IA rodando em contas e máquinas diferentes**.
 
 Assistentes de código como o Claude só conversam entre si **dentro da mesma conta**. O `session-share` abre um canal seguro para que o *seu* agente e o *meu* agente — em computadores separados — troquem mensagens, arquivos e até coordenem trabalho de forma autônoma.
 
 ```mermaid
 flowchart LR
-    A["🧑‍💻 Dev A<br/>+ Agente A"] <-->|MCP| S(("🛰️<br/>session-share<br/>+ Redis"))
-    S <-->|MCP| B["🧑‍💻 Dev B<br/>+ Agente B"]
-    S -.->|opcional| C["🧑‍💻 Dev C<br/>+ Agente C"]
+    A["Dev A<br/>+ Agente A"] <-->|MCP| S(("session-share<br/>+ Redis"))
+    S <-->|MCP| B["Dev B<br/>+ Agente B"]
+    S -.->|opcional| C["Dev C<br/>+ Agente C"]
 ```
 
 ---
 
-## ✨ Em uma frase
+## Em uma frase
 
 Dois agentes entram numa **room** (via um código curto e falável), e a partir daí conversam quase em tempo real — com **convite revogável**, **proteção contra prompt injection** e um modo de **cowork autônomo** onde os agentes trocam turnos sozinhos rumo a um objetivo.
 
 ---
 
-## 🔄 Como funciona (o fluxo básico)
+## Como funciona
 
 ```mermaid
 sequenceDiagram
     participant A as Agente A (criador)
-    participant S as 🛰️ session-share
+    participant S as session-share
     participant B as Agente B
 
     A->>S: session_share()
     S-->>A: room_id + participant_id
     Note over A,B: room_id é compartilhado por<br/>um canal confiável (Slack, verbal…)
     B->>S: session_join(room_id, join_code)
-    S-->>A: 🔔 pedido pendente
+    S-->>A: pedido pendente
     A->>S: session_approve()
-    S-->>B: ✅ aprovado
+    S-->>B: aprovado
     loop conversa
         A->>S: session_send("...")
-        B->>S: session_poll()  ⟵ long-poll
-        S-->>B: 📨 mensagem
+        B->>S: session_poll()  (long-poll)
+        S-->>B: mensagem
     end
     A->>S: session_close()
 ```
 
 | Passo | Tool | O que acontece |
 |---|---|---|
-| 1️⃣ Criar | `session_share` | Gera a room + um `room_id` tipo `casa-rio-sol-mar-42` |
-| 2️⃣ Convidar | `session_invite` | Cria um `join_code` de uso único (TTL 10 min) |
-| 3️⃣ Entrar | `session_join` | Entra como `pending` até o criador aprovar |
-| 4️⃣ Aprovar | `session_approve` | Promove o pendente a participante |
-| 5️⃣ Conversar | `session_send` / `session_poll` | Texto, JSON ou arquivo em quase tempo real |
-| 6️⃣ Sair | `session_close` | Última pessoa a sair encerra a room |
+| 1. Criar | `session_share` | Gera a room + um `room_id` tipo `casa-rio-sol-mar-42` |
+| 2. Convidar | `session_invite` | Cria um `join_code` de uso único (TTL 10 min) |
+| 3. Entrar | `session_join` | Entra como `pending` até o criador aprovar |
+| 4. Aprovar | `session_approve` | Promove o pendente a participante |
+| 5. Conversar | `session_send` / `session_poll` | Texto, JSON ou arquivo em quase tempo real |
+| 6. Sair | `session_close` | Última pessoa a sair encerra a room |
 
-> 🎧 Logo após entrar, cada lado sobe um **listener em background** (via `listener_prompt`) que avisa o agente quando algo chega — sem travar a conversa do usuário.
+> Logo após entrar, cada lado sobe um **listener em background** (via `listener_prompt`) que avisa o agente quando algo chega — sem travar a conversa do usuário.
 
 ---
 
-## 🤝 Cowork autônomo entre agentes (autoloop)
+## Cowork autônomo entre agentes (autoloop)
 
 O recurso mais interessante: dois agentes passam a **trocar turnos sozinhos** rumo a um objetivo comum, com consentimento explícito e limites de segurança.
 
@@ -65,10 +65,10 @@ stateDiagram-v2
     proposed --> active: autoloop_accept<br/>(2º participante)
     proposed --> ended: autoloop_decline / stop
     active --> active: autoloop_turn<br/>(proposing / agreeing)
-    active --> ended: 🤝 consenso (done por todos)
-    active --> ended: 🚧 impasse (blocked)
-    active --> ended: ⏱️ watchdog (turnos/tempo)
-    active --> ended: 🛑 autoloop_stop
+    active --> ended: consenso (done por todos)
+    active --> ended: impasse (blocked)
+    active --> ended: watchdog (turnos/tempo)
+    active --> ended: autoloop_stop
     ended --> [*]
 ```
 
@@ -79,16 +79,16 @@ stateDiagram-v2
 
 ---
 
-## 🔒 Segurança: conteúdo de outro agente nunca é instrução
+## Segurança: conteúdo de outro agente nunca é instrução
 
 A ameaça número um é **prompt injection cross-conta**: um agente pode ter acesso a ferramentas com efeito colateral real (CI/CD, `kubectl`, cofre de segredos…). A defesa é **estrutural, não semântica** — o servidor nunca tenta "adivinhar" se um texto é malicioso.
 
 ```mermaid
 flowchart TD
-    M["📨 Mensagem de outro agente"] --> E{"Envelope de session_poll"}
+    M["Mensagem de outro agente"] --> E{"Envelope de session_poll"}
     E --> O["origin: participant"]
     E --> U["untrusted: true"]
-    E --> C["content: { kind, text, ... }<br/>🔒 isolado, nunca concatenado"]
+    E --> C["content: { kind, text, ... }<br/>isolado, nunca concatenado"]
     style U fill:#ffe0e0,stroke:#c0392b
     style C fill:#e0f0ff,stroke:#2980b9
 ```
@@ -103,7 +103,7 @@ flowchart TD
 | **Auth de transporte** | JWT ES256 + allowlist de escopo por tool (*default deny*). |
 
 <details>
-<summary>🔑 Detalhes de autenticação (JWT ES256)</summary>
+<summary>Detalhes de autenticação (JWT ES256)</summary>
 
 Toda requisição ao servidor exige um JWT ES256 assinado por um serviço de auth externo, com `aud=session-share`. Validação em `app/auth.py`.
 
@@ -120,7 +120,7 @@ Token expirado, `aud` errado, `jti` revogado ou `kid` desconhecido → **401** a
 </details>
 
 <details>
-<summary>🛡️ Allowlist de escopo por tool (default deny)</summary>
+<summary>Allowlist de escopo por tool (default deny)</summary>
 
 Cada tool tem um verbo em `app/scopes.py` (`TOOL_SCOPES`) e chama `require_scope(...)` como primeira linha.
 
@@ -133,10 +133,10 @@ Verbos: `read` · `send` · `json` · `file` · `join` · `autoloop` · `admin`.
 
 ---
 
-## 🧰 Ferramentas MCP
+## Ferramentas MCP
 
 <details>
-<summary>💬 Sessão &amp; mensagens</summary>
+<summary>Sessão e mensagens</summary>
 
 | Tool | Descrição |
 |---|---|
@@ -156,7 +156,7 @@ Verbos: `read` · `send` · `json` · `file` · `join` · `autoloop` · `admin`.
 </details>
 
 <details>
-<summary>🤝 Autoloop (cowork autônomo)</summary>
+<summary>Autoloop (cowork autônomo)</summary>
 
 | Tool | Descrição |
 |---|---|
@@ -170,7 +170,7 @@ Verbos: `read` · `send` · `json` · `file` · `join` · `autoloop` · `admin`.
 
 ---
 
-## 🚀 Começando
+## Começando
 
 **Rodar localmente** (precisa de um Redis):
 
@@ -201,7 +201,7 @@ REDIS_URL=redis://localhost:6379/0 python3 -m pytest tests/ -v
 ```
 
 <details>
-<summary>☸️ Deploy em Kubernetes</summary>
+<summary>Deploy em Kubernetes</summary>
 
 ```bash
 kubectl apply -f k8s/networkpolicy.yaml
@@ -212,12 +212,12 @@ kubectl apply -f k8s/deployment.yaml
 
 Um workflow de CI (`.github/workflows/ci.yml`) roda os testes a cada push/PR. O deploy depende da sua infra (build da imagem + `kubectl apply` dos manifests em `k8s/`).
 
-⚠️ Ajuste `MCP_ALLOWED_HOSTS` no ConfigMap para o host/porta reais antes de expor fora de `localhost` (proteção DNS-rebinding do SDK MCP). O Redis é **efêmero de propósito** (sem PVC): um restart do pod recria as rooms.
+Ajuste `MCP_ALLOWED_HOSTS` no ConfigMap para o host/porta reais antes de expor fora de `localhost` (proteção DNS-rebinding do SDK MCP). O Redis é **efêmero de propósito** (sem PVC): um restart do pod recria as rooms.
 </details>
 
 ---
 
-## 🔌 Plugin para Claude Code
+## Plugin para Claude Code
 
 `claude-plugin/session-share-listener/` dispara o listener **automaticamente**: um hook `PostToolUse` em `session_share`/`session_join` lembra o modelo de subir o listener em background usando o `listener_prompt` da resposta — sem pollar em foreground.
 
@@ -234,7 +234,7 @@ Detalhes no [README do plugin](claude-plugin/session-share-listener/README.md).
 
 ---
 
-## ⚠️ Limitações conhecidas
+## Limitações conhecidas
 
 - **Redis efêmero** — sem PVC por design; restart do pod recria as rooms (TTL de horas).
 - **`session_poll` não batcheia** — em rajadas rápidas, pode ser preciso pollar mais de uma vez.
@@ -244,8 +244,8 @@ Detalhes no [README do plugin](claude-plugin/session-share-listener/README.md).
 
 ---
 
-## 🧱 Stack
+## Stack
 
 `Python` · `FastMCP` (SDK do Model Context Protocol) · `Redis` (streams + long-poll) · `Docker` · `Kubernetes` · `pytest`
 
-📄 Documentação extra: [`docs/injection-test.md`](docs/injection-test.md) · [`docs/observability.md`](docs/observability.md) · [`docs/spike-token-claims.md`](docs/spike-token-claims.md)
+Documentação extra: [`docs/injection-test.md`](docs/injection-test.md) · [`docs/observability.md`](docs/observability.md) · [`docs/spike-token-claims.md`](docs/spike-token-claims.md)
