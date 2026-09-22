@@ -1,0 +1,10 @@
+{
+  "name": "session-share-listener",
+  "description": "Dispara automaticamente um listener para rooms do MCP session-share: hook PostToolUse em session_share/session_join que resolve o caminho do script session_poll_watch.py (listener sem LLM, observado pela tool Monitor) e lembra o modelo de armar isso, com fallback pro sub-agente Claude em loop de session_poll quando python3/mcp não estão disponíveis. A skill session-listen documenta os dois caminhos e a classificação por intent do protocolo 1:1.",
+  "version": "0.2.0",
+  "author": {
+    "name": "Andre Santos",
+    "email": "andresantos09@users.noreply.github.com"
+  },
+  "keywords": ["session-share", "mcp", "listener", "hooks"]
+}

@@ -1,0 +1,78 @@
+{
+  "uid": "mcp-session-share-obs",
+  "title": "Visão Geral – MCP Session Share",
+  "tags": ["mcp", "session-share"],
+  "timezone": "browser",
+  "time": { "from": "now-1h", "to": "now" },
+  "refresh": "30s",
+  "schemaVersion": 39,
+  "panels": [
+    { "id": 1, "type": "row", "title": "Visão geral", "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 } },
+    {
+      "id": 2, "type": "stat", "title": "Rooms ativas",
+      "gridPos": { "h": 4, "w": 4, "x": 0, "y": 1 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [{ "expr": "session_share_rooms_active", "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "legendFormat": "rooms" }],
+      "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] }
+    },
+    {
+      "id": 3, "type": "stat", "title": "Mensagens/s",
+      "gridPos": { "h": 4, "w": 4, "x": 4, "y": 1 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [{ "expr": "sum(rate(session_share_messages_total[$__rate_interval]))", "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "legendFormat": "msgs/s" }],
+      "fieldConfig": { "defaults": { "unit": "reqps" }, "overrides": [] }
+    },
+    {
+      "id": 4, "type": "stat", "title": "Latência de poll p95",
+      "gridPos": { "h": 4, "w": 4, "x": 8, "y": 1 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [{ "expr": "histogram_quantile(0.95, sum by (le) (rate(session_share_poll_latency_seconds_bucket[$__rate_interval])))", "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "legendFormat": "p95" }],
+      "fieldConfig": { "defaults": { "unit": "s" }, "overrides": [] }
+    },
+    {
+      "id": 5, "type": "stat", "title": "SCOPE_DENIED/s",
+      "gridPos": { "h": 4, "w": 4, "x": 12, "y": 1 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [{ "expr": "sum(rate(session_share_scope_denied_total[$__rate_interval]))", "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "legendFormat": "scope_denied/s" }],
+      "fieldConfig": { "defaults": { "unit": "reqps" }, "overrides": [] }
+    },
+    {
+      "id": 6, "type": "stat", "title": "POLICY_DENIED/s",
+      "gridPos": { "h": 4, "w": 4, "x": 16, "y": 1 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [{ "expr": "sum(rate(session_share_policy_denied_total[$__rate_interval]))", "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "legendFormat": "policy_denied/s" }],
+      "fieldConfig": { "defaults": { "unit": "reqps" }, "overrides": [] }
+    },
+    { "id": 7, "type": "row", "title": "Mensagens", "gridPos": { "h": 1, "w": 24, "x": 0, "y": 5 } },
+    {
+      "id": 8, "type": "timeseries", "title": "Mensagens por tipo",
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 6 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [{ "expr": "sum by (kind) (rate(session_share_messages_total[$__rate_interval]))", "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "legendFormat": "{{kind}}" }],
+      "fieldConfig": { "defaults": { "unit": "reqps" }, "overrides": [] }
+    },
+    { "id": 9, "type": "row", "title": "Long-poll", "gridPos": { "h": 1, "w": 24, "x": 0, "y": 14 } },
+    {
+      "id": 10, "type": "timeseries", "title": "Latência de session_poll (p50/p95/p99)",
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 15 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [
+        { "expr": "histogram_quantile(0.50, sum by (le) (rate(session_share_poll_latency_seconds_bucket[$__rate_interval])))", "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "legendFormat": "p50" },
+        { "expr": "histogram_quantile(0.95, sum by (le) (rate(session_share_poll_latency_seconds_bucket[$__rate_interval])))", "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "legendFormat": "p95" },
+        { "expr": "histogram_quantile(0.99, sum by (le) (rate(session_share_poll_latency_seconds_bucket[$__rate_interval])))", "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "legendFormat": "p99" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "s" }, "overrides": [] }
+    },
+    { "id": 11, "type": "row", "title": "Autorização", "gridPos": { "h": 1, "w": 24, "x": 0, "y": 23 } },
+    {
+      "id": 12, "type": "timeseries", "title": "Chamadas recusadas por segundo",
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 24 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [
+        { "expr": "sum(rate(session_share_scope_denied_total[$__rate_interval]))", "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "legendFormat": "SCOPE_DENIED" },
+        { "expr": "sum(rate(session_share_policy_denied_total[$__rate_interval]))", "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "legendFormat": "POLICY_DENIED" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "reqps" }, "overrides": [] }
+    }
+  ]
+}

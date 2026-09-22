@@ -1,0 +1,51 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mcp-session-share-config
+  namespace: mcp
+  labels:
+    app: mcp-session-share
+data:
+  # REDIS_URL NÃO vai aqui (story 17) — o Redis agora exige senha
+  # (--requirepass), e a URL com a senha embutida vem do Secret
+  # mcp-session-share-secrets, nunca do ConfigMap (evita precedência
+  # ambígua entre os dois no envFrom do Deployment). Ver
+  # k8s/secret.example.yaml.
+  MCP_HOST: "0.0.0.0"
+  MCP_PORT: "8000"
+  # 10.60.64.54:* cobre qualquer NodePort do StageX (produção); localhost
+  # cobre port-forward/dev local. Se o NodePort mudar (kubectl delete/recreate
+  # do Service), não precisa reajustar — é wildcard de porta, não porta fixa.
+  MCP_ALLOWED_HOSTS: "10.60.64.54:*,localhost:8000,127.0.0.1:8000"
+  MCP_ALLOWED_ORIGINS: ""
+  MCP_ENABLE_DNS_REBINDING_PROTECTION: "true"
+  SESSION_DEFAULT_TTL_SECONDS: "7200"
+  SESSION_MAX_TTL_SECONDS: "86400"
+  SESSION_DEFAULT_POLL_TIMEOUT: "20"
+  # Elevado de 45 para 120 (SPEC-server-push CAP-1) para reduzir round-trips
+  # de session_poll em esperas longas. Sem Ingress/proxy L7 neste manifesto
+  # (Service é NodePort direto) para validar timeout de infra intermediária —
+  # se isso mudar, revalide empiricamente antes de manter 120s em produção.
+  SESSION_MAX_POLL_TIMEOUT: "120"
+  # Autenticação de transporte (CAP-2, story 4) — ver app/auth.py e
+  # README.md "Autenticação". AUTH_JWKS_URL/AUTH_REVOCATIONS_URL apontam
+  # para o Service do auth-service (porta 3000). AUTH_REVOCATIONS_TOKEN
+  # (segredo, header X-Internal-Token) e PARTICIPANT_HASH_KEY (CAP-4, story
+  # 10 — mesma chave do AUTH_HASH_KEY do dashboard) NÃO vão aqui —
+  # vêm do Secret mcp-session-share-secrets (story 14), nunca de ConfigMap;
+  # ver k8s/secret.example.yaml.
+  #
+  # EXCEÇÃO (revisão da story 4, 2026-09-12): "false" aqui, não o default
+  # "true" do código. O auth-service ainda não existe em produção (story 7)
+  # — com AUTH_ENABLED=true e emissor inexistente, fail-closed derruba este
+  # servidor ~AUTH_FAIL_CLOSED_AFTER_SECONDS depois do deploy. Virar para
+  # "true" e REMOVER este comentário assim que o dashboard estiver no ar.
+  # Pré-requisito de Secret atendido pela story 14; virar para true é
+  # decisão humana.
+  AUTH_ENABLED: "false"
+  AUTH_ISSUER: "auth-service"
+  AUTH_AUDIENCE: "session-share"
+  AUTH_JWKS_URL: "http://auth-service.svc.cluster.local:3000/.well-known/jwks.json"
+  AUTH_REVOCATIONS_URL: "http://auth-service.svc.cluster.local:3000/api/tokens/revocations"
+  AUTH_CACHE_SECONDS: "60"
+  AUTH_FAIL_CLOSED_AFTER_SECONDS: "300"

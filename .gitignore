@@ -1,0 +1,9 @@
+.venv/
+__pycache__/
+*.pyc
+.env
+
+# BMAD (instalado via npx bmad-method install — regenerável, não versionado)
+.claude/
+_bmad/
+_bmad-output/

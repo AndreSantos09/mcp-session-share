@@ -1,0 +1,15 @@
+mcp[cli]>=2,<3
+redis>=5,<6
+# CAP-2 (story 4): validação de JWT ES256 (app/auth.py). `mcp` já traz
+# pyjwt[crypto] como dependência transitiva, mas fixamos aqui porque agora é
+# import direto do nosso código, não só do SDK.
+PyJWT[crypto]>=2.10,<3
+# Cliente HTTP (JWKS/revocations) reaproveita o httpx2 vendorizado pelo `mcp`
+# — não adicionamos um segundo pacote de HTTP client (httpx "de verdade" nem
+# está disponível neste ambiente ao lado do vendorizado, ver
+# docs/spike-token-claims.md). Declarado aqui porque agora é import direto
+# do nosso código (app/auth.py), não só transitivo via `mcp`.
+httpx2>=2,<3
+# spec-observability-metrics: gera o texto de exposição do endpoint /metrics
+# (app/metrics.py) — Gauge/Counter/Histogram + generate_latest.
+prometheus_client>=0.20,<1

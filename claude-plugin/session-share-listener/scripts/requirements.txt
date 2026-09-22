@@ -1,0 +1,8 @@
+# session_poll_watch.py — cliente MCP puro, sem nada do servidor session-share.
+# pip install -r requirements.txt (uma vez por máquina/venv).
+# PIN exato, não faixa: já vimos duas incompatibilidades reais de API entre
+# versões do SDK mcp dentro de ">=2,<3" (httpx2 como dependência e o shape
+# de retorno de streamable_http_client, 2-tupla vs 3-tupla) — uma faixa
+# aberta deixa o pip reaproveitar qualquer mcp já instalado por outro
+# projeto que "satisfaça" a versão sem ter a API testada aqui.
+mcp[cli]==2.2.0

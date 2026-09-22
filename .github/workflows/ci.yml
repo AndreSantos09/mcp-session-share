@@ -1,0 +1,46 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    services:
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      REDIS_URL: redis://localhost:6379/0
+      # test_scopes.py exige a camada de auth ligada; os testes injetam o JWK
+      # direto no verifier (sem fetch de rede real).
+      AUTH_ENABLED: "true"
+      PARTICIPANT_HASH_KEY: "ci-test-key"
+      AUTH_JWKS_URL: "http://localhost/jwks"
+      AUTH_REVOCATIONS_URL: "http://localhost/revocations"
+      AUTH_REVOCATIONS_TOKEN: "ci-test-token"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt -r requirements-dev.txt
+
+      - name: Run tests
+        run: python -m pytest tests/ -v

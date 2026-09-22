@@ -1,0 +1,14 @@
+{
+  "name": "session-share",
+  "owner": {
+    "name": "Andre Santos",
+    "email": "andresantos09@users.noreply.github.com"
+  },
+  "plugins": [
+    {
+      "name": "session-share-listener",
+      "source": "./session-share-listener",
+      "description": "Hook PostToolUse + skill session-listen: dispara automaticamente o listener em background ao criar/entrar numa room do MCP session-share."
+    }
+  ]
+}

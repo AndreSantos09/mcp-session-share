@@ -1,0 +1,70 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mcp-session-redis
+  namespace: mcp
+  labels:
+    app: mcp-session-redis
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mcp-session-redis
+  template:
+    metadata:
+      labels:
+        app: mcp-session-redis
+    spec:
+      containers:
+        - name: redis
+          image: redis:7-alpine
+          # Sem PVC de propósito: os dados aqui (rooms/mensagens) são
+          # inerentemente efêmeros (TTL de horas) — perder o estado num
+          # restart raro do pod só significa recriar a room, não é crítico.
+          #
+          # --requirepass (story 17): sem NetworkPolicy nem senha, qualquer
+          # pod do cluster que resolvesse este Service lia/escrevia
+          # rooms/mensagens/cursores/presença. $(REDIS_PASSWORD) é expansão
+          # de variável do Kubernetes (não do shell) — nunca a senha
+          # literal aparece neste arquivo.
+          env:
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mcp-session-share-secrets
+                  key: REDIS_PASSWORD
+          args: ["--requirepass", "$(REDIS_PASSWORD)"]
+          ports:
+            - containerPort: 6379
+          readinessProbe:
+            tcpSocket:
+              port: 6379
+            initialDelaySeconds: 3
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: 6379
+            initialDelaySeconds: 5
+            periodSeconds: 20
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "50m"
+            limits:
+              memory: "256Mi"
+              cpu: "250m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mcp-session-redis
+  namespace: mcp
+  labels:
+    app: mcp-session-redis
+spec:
+  type: ClusterIP
+  selector:
+    app: mcp-session-redis
+  ports:
+    - port: 6379
+      targetPort: 6379

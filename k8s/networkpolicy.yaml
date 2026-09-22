@@ -1,0 +1,30 @@
+# Story 17: sem isto, qualquer pod do cluster que resolvesse o Service
+# mcp-session-redis (ClusterIP, sem isolamento de rede nenhum) conseguia
+# ler/escrever rooms, mensagens, cursores e presença — a senha
+# (--requirepass, redis-deployment.yaml) fecha "ler sem saber a senha";
+# esta policy fecha "tentar a senha contra o Redis de qualquer pod
+# aleatório do cluster" antes mesmo do handshake. Ingresso restrito a quem
+# de fato precisa falar com este Redis: o próprio mcp-session-share e o
+# auth-service (lê este Redis direto para /sessoes e presença, CAP-7).
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: mcp-session-redis-ingress
+  namespace: mcp
+spec:
+  podSelector:
+    matchLabels:
+      app: mcp-session-redis
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: mcp-session-share
+        - podSelector:
+            matchLabels:
+              app: auth-service
+      ports:
+        - protocol: TCP
+          port: 6379

@@ -1,0 +1,16 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "mcp__session-share__session_share|mcp__session-share__session_join",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/remind-listener.py\"",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}

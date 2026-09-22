@@ -1,0 +1,73 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mcp-session-share
+  namespace: mcp
+  labels:
+    app: mcp-session-share
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mcp-session-share
+  template:
+    metadata:
+      labels:
+        app: mcp-session-share
+      annotations:
+        # spec-observability-metrics (achado 06 do Radar): habilita descoberta
+        # automática por um Prometheus com kubernetes_sd_configs (role: pod)
+        # já configurado pra ler estas 3 annotations — convenção padrão, sem
+        # exigir mudança na config do Prometheus em si. Se o Prometheus alvo
+        # (aqui, um "prometheus-x" no seu Grafana) não usar esse padrão de
+        # descoberta, ver docs/observability.md para o job estático
+        # equivalente.
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8000"
+        prometheus.io/path: "/metrics"
+    spec:
+      containers:
+        - name: mcp-session-share
+          image: mcp-session-share:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8000
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 20
+          envFrom:
+            - configMapRef:
+                name: mcp-session-share-config
+            - secretRef:
+                name: mcp-session-share-secrets
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "256Mi"
+              cpu: "500m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mcp-session-share
+  namespace: mcp
+  labels:
+    app: mcp-session-share
+spec:
+  type: NodePort
+  selector:
+    app: mcp-session-share
+  ports:
+    - port: 8000
+      targetPort: 8000
