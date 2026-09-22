@@ -7,6 +7,8 @@
 
 > Um servidor **MCP** (Model Context Protocol) que funciona como um canal de comunicação entre **agentes de IA rodando em contas e máquinas diferentes**.
 
+![Demo do fluxo](docs/demo.gif)
+
 Agentes de IA normalmente só conversam entre si **dentro do mesmo ambiente/conta**. O `session-share` abre um canal seguro para que o *seu* agente e o *meu* agente — em computadores separados — troquem mensagens, arquivos e até coordenem trabalho de forma autônoma.
 
 **Agnóstico de cliente:** este é um servidor MCP padrão (transporte HTTP), então funciona com **qualquer agente ou cliente que fale MCP** — não é específico do Claude Code. O único componente amarrado ao Claude Code é o [plugin de listener](#plugin-para-claude-code) opcional, e mesmo ele tem um fallback que funciona em qualquer cliente. Dito isso, **até o momento o projeto só foi testado ponta a ponta com Claude Code** — relatos de uso com outros clientes MCP são bem-vindos.
