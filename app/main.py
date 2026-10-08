@@ -45,13 +45,14 @@ from mcp.server.mcpserver import Context
 from mcp.server.mcpserver.exceptions import ToolError
 from mcp.server.mcpserver.server import ListToolsResult
 from mcp.server.transport_security import TransportSecuritySettings
+from mcp.types import ToolAnnotations
 from starlette.requests import Request
 from starlette.responses import JSONResponse, Response
 
 from app import config, metrics
 from app.auth import require_scope
 from app.redis_store import DEFAULT_POLICY_MODE, InvalidPolicyError, SessionStore
-from app.scopes import TOOL_SCOPES
+from app.scopes import TOOL_ANNOTATIONS, TOOL_SCOPES
 
 logger = logging.getLogger(__name__)
 
@@ -311,21 +312,39 @@ def _declares_context_param(func) -> bool:
 def _tool(*tool_args, **tool_kwargs):
     """Wrapper de `mcp.tool()` (CAP-3, story 8): recusa subir — `RuntimeError`
     na hora de importar `app.main` — se a tool não tiver entrada em
-    `app.scopes.TOOL_SCOPES`, ou se não declarar um parâmetro `ctx`/`Context`
-    (sem isso, `require_scope` nunca teria o que checar). Default deny
-    estrutural: uma tool nova só entra no ar se alguém decidiu
-    explicitamente qual verbo ela exige E como ela recebe o token."""
+    `app.scopes.TOOL_SCOPES`, em `app.scopes.TOOL_ANNOTATIONS`, ou se não
+    declarar um parâmetro `ctx`/`Context` (sem isso, `require_scope` nunca
+    teria o que checar). Default deny estrutural: uma tool nova só entra no ar
+    se alguém decidiu explicitamente qual verbo ela exige, quais hints MCP ela
+    declara E como ela recebe o token.
+
+    Os quatro hints (read_only/destructive/idempotent/open_world) são sempre
+    aplicados a partir de TOOL_ANNOTATIONS — nunca passados avulsos no
+    decorator — para que a fonte de verdade dos hints fique num mapa único,
+    do mesmo jeito que os scopes."""
 
     def decorator(func):
         if func.__name__ not in TOOL_SCOPES:
             raise RuntimeError(
                 f"CAP-3: tool '{func.__name__}' registrada sem entrada em app.scopes.TOOL_SCOPES"
             )
+        if func.__name__ not in TOOL_ANNOTATIONS:
+            raise RuntimeError(
+                f"CAP-3: tool '{func.__name__}' registrada sem entrada em app.scopes.TOOL_ANNOTATIONS "
+                "(os quatro hints MCP são obrigatórios em toda tool)"
+            )
         if not _declares_context_param(func):
             raise RuntimeError(
                 f"CAP-3: tool '{func.__name__}' registrada sem parâmetro ctx (Context) — "
                 "require_scope não teria como checar o token autenticado"
             )
+        read_only, destructive, idempotent, open_world = TOOL_ANNOTATIONS[func.__name__]
+        tool_kwargs["annotations"] = ToolAnnotations(
+            readOnlyHint=read_only,
+            destructiveHint=destructive,
+            idempotentHint=idempotent,
+            openWorldHint=open_world,
+        )
         return mcp.tool(*tool_args, **tool_kwargs)(func)
 
     return decorator
