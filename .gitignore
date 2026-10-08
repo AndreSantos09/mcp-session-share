@@ -3,6 +3,10 @@ __pycache__/
 *.pyc
 .env
 
+# macOS Finder — metadados de visualização, locais e pessoais
+.DS_Store
+**/.DS_Store
+
 # BMAD (instalado via npx bmad-method install — regenerável, não versionado)
 .claude/
 _bmad/
